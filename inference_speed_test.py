@@ -11,6 +11,7 @@ import torch
 from tqdm import tqdm
 
 from model.model import MattingNetwork
+from iutils import result2image
 
 torch.backends.cudnn.benchmark = True
 
@@ -44,6 +45,7 @@ class InferenceSpeedTest:
             rec = None, None, None, None
             for _ in tqdm(range(1000)):
                 fgr, pha, *rec = self.model(src, *rec, self.args.downsample_ratio)
+                result2image(src, pha)
                 torch.cuda.synchronize()
 
 if __name__ == '__main__':

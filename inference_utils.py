@@ -3,7 +3,8 @@ import os
 import pims
 import numpy as np
 from torch.utils.data import Dataset
-from torchvision.transforms.functional import to_pil_image
+# from torchvision.transforms.functional import to_pil_image
+from iutils import to_pil_image
 from PIL import Image
 
 
@@ -65,22 +66,22 @@ class ImageSequenceReader(Dataset):
         with Image.open(os.path.join(self.path, self.files[idx])) as img:
             img.load()
         if self.transform is not None:
-            return self.transform(img)
-        return img
+            return self.transform(img), self.files[idx]
+        return img, self.files[idx]
 
 
 class ImageSequenceWriter:
-    def __init__(self, path, extension='jpg'):
+    def __init__(self, path, extension='png'):
         self.path = path
         self.extension = extension
         self.counter = 0
         os.makedirs(path, exist_ok=True)
     
-    def write(self, frames):
+    def write(self, frames, img_path):
         # frames: [T, C, H, W]
         for t in range(frames.shape[0]):
             to_pil_image(frames[t]).save(os.path.join(
-                self.path, str(self.counter).zfill(4) + '.' + self.extension))
+                self.path, img_path))
             self.counter += 1
             
     def close(self):

@@ -21,6 +21,8 @@ from tqdm.auto import tqdm
 
 from inference_utils import VideoReader, VideoWriter, ImageSequenceReader, ImageSequenceWriter
 
+from iutils import result2image
+
 def convert_video(model,
                   input_source: str,
                   input_resize: Optional[Tuple[int, int]] = None,
@@ -118,13 +120,14 @@ def convert_video(model,
         with torch.no_grad():
             bar = tqdm(total=len(source), disable=not progress, dynamic_ncols=True)
             rec = [None] * 4
-            for src in reader:
+            for src, img_path in reader:
 
                 if downsample_ratio is None:
                     downsample_ratio = auto_downsample_ratio(*src.shape[2:])
 
                 src = src.to(device, dtype, non_blocking=True).unsqueeze(0) # [B, T, C, H, W]
                 fgr, pha, *rec = model(src, *rec, downsample_ratio)
+                # fgr, pha = model(src, downsample_ratio)[:2]
 
                 if output_foreground is not None:
                     writer_fgr.write(fgr[0])
@@ -134,9 +137,11 @@ def convert_video(model,
                     if output_type == 'video':
                         com = fgr * pha + bgr * (1 - pha)
                     else:
-                        fgr = fgr * pha.gt(0)
-                        com = torch.cat([fgr, pha], dim=-3)
-                    writer_com.write(com[0])
+                        # fgr = fgr * pha.gt(0)
+                        # com = torch.cat([fgr, pha], dim=-3)
+                        result2image(src[0], pha[0], img_path[0], output_source=output_composition)
+                        # com = pha
+                    # writer_com.write(com[0], img_path[0])
                 
                 bar.update(src.size(1))
 
